@@ -129,6 +129,7 @@
         let endTime = "2022-09-01T23:59:29.782Z"
         let roomId = "190724"
         let apiKey = ""
+        let resultsArray = [];
 
         let formStartTime = document.getElementById('form-startTime')
         let formEndTime = document.getElementById('form-endTime')
@@ -151,7 +152,7 @@
             formDatePick.value = ""
         }
         const selectDatePick = () => {
-            console.log(formDatePick.value)
+            //console.log(formDatePick.value)
             if (formDatePick.value !== "") {
                 startTime = `${formDatePick.value.slice(0, 4)}-${formDatePick.value.slice(5, 7)}-${formDatePick.value.slice(8, 10)}T00:00:01.782Z`
                 endTime = `${formDatePick.value.slice(0, 4)}-${formDatePick.value.slice(5, 7)}-${formDatePick.value.slice(8, 10)}T23:59:29.782Z`
@@ -178,34 +179,71 @@
         const reloadPage = () => {
             button.addEventListener('click', location.reload(true))
         }
-        const deleteDuplicates = (item, index) => {
+        const displayOccupancy = () => {
+            let midnight = Math.floor(new Date(startTime).getTime() / 1000)
+            console.log(midnight, "midnight")
+            let timeToCheck = midnight;
+            for (i = 0; i < 288; i++) {
+                let currentOccupancy = 0;
+                //displaytime in human readable form
+                const div2 = document.createElement("div")
+                div2.style.borderBottom = "1px solid wheat"
+                let toCheckMinute = new Date(timeToCheck * 1000).getUTCMinutes();
+                if (toCheckMinute < 10) toCheckMinute = "0" + toCheckMinute
+                let toCheckHour = new Date(timeToCheck * 1000).getUTCHours();
+                if (toCheckHour < 10) toCheckHour = "0" + toCheckHour
+                div2.innerHTML = `${toCheckHour}:${toCheckMinute}`
+
+                generalHours.appendChild(div2);
+                //check occupancy
+                resultsArray.forEach(element => {
+                    if (element.startTime < timeToCheck && element.endTime > timeToCheck) {
+                        currentOccupancy = element.occupancy
+                    }
+                })
+                //display occupancy
+                console.log(currentOccupancy);
+                const div = document.createElement("div")
+                div.style.borderBottom = "1px solid wheat"
+                div.innerText = currentOccupancy;
+                generalValues.appendChild(div);
+                //increment timeToCheck by 5 minutes
+                timeToCheck += 300
+            }
+        }
+        const getOccupancy = (item, index) => {
+            console.log(item)
+            //TODO: get UNIX time
+            //get date and time from response:  
+            let minute = item.endTime.slice(14, 16)
             let hour = item.endTime.slice(11, 13)
             let day = item.endTime.slice(8, 10)
             let month = item.endTime.slice(5, 7)
             let year = item.endTime.slice(0, 4)
-            console.log(item.endTime, 'endtime')
-            console.log(month, 'month')
-            console.log(year, 'year')
-            let check = (hours.findIndex(element => element === hour));
-            //deleting duplicates temporary switched off. uncomment to enable:
-            //if (check === -1) {
-            const div = document.createElement("div")
-            div.style.borderBottom = "1px solid wheat"
-            div.innerHTML = item.occupancy;
-            console.log(item)
-            generalValues.appendChild(div);
-            const div2 = document.createElement("div")
-            div2.style.borderBottom = "1px solid wheat"
-            console.log(currentTime.getMonth())
-            console.log(Number(month), 'number month')
-            if (Number(hour) > currentTime.getHours() && Number(day) >= currentTime.getDate() && Number(month) >= (currentTime.getMonth() + 1)) {
-                div2.innerHTML = `${item.startTime.slice(11, 13)}:${item.startTime.slice(14, 16)} - now`
-            } else {
-                div2.innerHTML = `${item.startTime.slice(11, 13)}:${item.startTime.slice(14, 16)} - ${item.endTime.slice(11, 13)}:${item.endTime.slice(14, 16)}`
-            }
-            generalHours.appendChild(div2);
-            hours.push(hour)
-            //} - uncomment to enable deleting duplicates
+            let occupancy = item.occupancy;
+            let itemStartTime = Math.floor(new Date(item.startTime).getTime() / 1000);
+            let itemEndTime = Math.floor(new Date(item.endTime).getTime() / 1000);
+            resultsArray.push({
+                "occupancy": occupancy, "startTime": itemStartTime, "endTime": itemEndTime
+            })
+
+
+
+            //TODO: check if UNIX time changed more than 5 minutes
+            // display occupancy
+            //const div = document.createElement("div")
+            //div.style.borderBottom = "1px solid wheat"
+            //generalValues.appendChild(div);
+            // display date and time
+            //const div2 = document.createElement("div")
+            //div2.style.borderBottom = "1px solid wheat"
+            //if (Number(hour) > currentTime.getHours() && Number(day) >= currentTime.getDate() && Number(month) >= (currentTime.getMonth() + 1)) {
+            //    div2.innerHTML = `${item.startTime.slice(11, 13)}:${item.startTime.slice(14, 16)} - now`
+            //} else {
+            //    div2.innerHTML = `${item.startTime.slice(11, 13)}:${item.startTime.slice(14, 16)} - ${item.endTime.slice(11, 13)}:${item.endTime.slice(14, 16)}`
+            //}
+            //generalHours.appendChild(div2);
+
         }
         const showResult = (response) => {
             //lock input fields
@@ -224,8 +262,9 @@
             div2.innerHTML = "time"; // TODO: change inner HTML to inner text
             generalHours.appendChild(div2);
             let content = response.content
-            //display results
-            content.forEach(deleteDuplicates)
+            console.log(typeof content)
+            content.forEach(getOccupancy)
+            displayOccupancy();
         }
 
         const showError = (err) => {
