@@ -152,14 +152,12 @@
             formDatePick.value = ""
         }
         const selectDatePick = () => {
-            //console.log(formDatePick.value)
             if (formDatePick.value !== "") {
                 startTime = `${formDatePick.value.slice(0, 4)}-${formDatePick.value.slice(5, 7)}-${formDatePick.value.slice(8, 10)}T00:00:01.782Z`
                 endTime = `${formDatePick.value.slice(0, 4)}-${formDatePick.value.slice(5, 7)}-${formDatePick.value.slice(8, 10)}T23:59:29.782Z`
                 formStartTime.value = startTime
                 formEndTime.value = endTime
             }
-
         }
         const selectToday = () => {
             startTime = `${currentYear}-${currentMonth}-${currentDay}T00:00:01.782Z`
@@ -167,7 +165,6 @@
             formStartTime.value = startTime
             formEndTime.value = endTime
             formDatePick.value = ""
-
         }
         const selectYesterday = () => {
             startTime = `${currentYear}-${currentMonth}-${currentDayMinusOne}T00:00:01.782Z`
@@ -185,7 +182,7 @@
             let timeToCheck = midnight;
             for (i = 0; i < 288; i++) {
                 let currentOccupancy = 0;
-                //displaytime in human readable form
+                //display time 
                 const div2 = document.createElement("div")
                 div2.style.borderBottom = "1px solid wheat"
                 let toCheckMinute = new Date(timeToCheck * 1000).getUTCMinutes();
@@ -193,7 +190,6 @@
                 let toCheckHour = new Date(timeToCheck * 1000).getUTCHours();
                 if (toCheckHour < 10) toCheckHour = "0" + toCheckHour
                 div2.innerHTML = `${toCheckHour}:${toCheckMinute}`
-
                 generalHours.appendChild(div2);
                 //check occupancy
                 resultsArray.forEach(element => {
@@ -213,8 +209,6 @@
         }
         const getOccupancy = (item, index) => {
             console.log(item)
-            //TODO: get UNIX time
-            //get date and time from response:  
             let minute = item.endTime.slice(14, 16)
             let hour = item.endTime.slice(11, 13)
             let day = item.endTime.slice(8, 10)
@@ -226,40 +220,16 @@
             resultsArray.push({
                 "occupancy": occupancy, "startTime": itemStartTime, "endTime": itemEndTime
             })
-
-
-
-            //TODO: check if UNIX time changed more than 5 minutes
-            // display occupancy
-            //const div = document.createElement("div")
-            //div.style.borderBottom = "1px solid wheat"
-            //generalValues.appendChild(div);
-            // display date and time
-            //const div2 = document.createElement("div")
-            //div2.style.borderBottom = "1px solid wheat"
-            //if (Number(hour) > currentTime.getHours() && Number(day) >= currentTime.getDate() && Number(month) >= (currentTime.getMonth() + 1)) {
-            //    div2.innerHTML = `${item.startTime.slice(11, 13)}:${item.startTime.slice(14, 16)} - now`
-            //} else {
-            //    div2.innerHTML = `${item.startTime.slice(11, 13)}:${item.startTime.slice(14, 16)} - ${item.endTime.slice(11, 13)}:${item.endTime.slice(14, 16)}`
-            //}
-            //generalHours.appendChild(div2);
-
         }
         const showResult = (response) => {
-            //lock input fields
-            // formStartTime.setAttribute("disabled", true)
-            // formEndTime.setAttribute("disabled", true)
-            // formroomId.setAttribute("disabled", true)
-            // formApiKey.setAttribute("disabled", true)
-            //display header
             errorBox.innerText = ""
             const div = document.createElement("div")
             div.style.borderBottom = "1px solid wheat"
-            div.innerHTML = "occupancy"; // TODO: change inner HTML to inner text
+            div.innerText = "occupancy";
             generalValues.appendChild(div);
             const div2 = document.createElement("div")
             div2.style.borderBottom = "1px solid wheat"
-            div2.innerHTML = "time"; // TODO: change inner HTML to inner text
+            div2.innerText = "time";
             generalHours.appendChild(div2);
             let content = response.content
             console.log(typeof content)
@@ -294,12 +264,8 @@
                 .then(response => response.json())
                 .then(response => showResult(response))
                 .catch(err => showError(err));
-            //reload buton
-            //button.innerText = "Reload"
-            //button.removeEventListener('click', fetchData)
-            //button.addEventListener("click", reloadPage)
-
         }
+
         button.addEventListener("click", fetchData)
         formToday.addEventListener('click', selectToday)
         formYesterday.addEventListener('click', selectYesterday)
