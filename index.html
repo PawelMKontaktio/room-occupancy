@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>room-occupancy</title>
+    <title>Document</title>
     <style>
         body {
             margin: 0;
@@ -88,10 +88,25 @@
             padding: none;
             font-size: 15px;
         }
+
+        .width50procent {
+            width: 50%;
+            float: left;
+        }
+
+        #form-output {
+            display: block;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #fff;
+        }
     </style>
 </head>
 
 <body>
+    
     <form>
         <button type="button" id="form-today">Today</button>
         <button type="button" id="form-yesterday">Yesterday</button>
@@ -104,6 +119,9 @@
         <input type="text" id="form-roomId">
         <label for="text">apiKey:</label>
         <input type="text" id="form-apiKey">
+        <label id="form-output">Output format:</label>
+        <button type="button" class="width50procent" id="form-format-grouped">Grouped</button>
+        <button type="button" class="width50procent" id="form-format-5min">5 Min Granulation</button>
         <button type="button" id="form-send">Send</button>
     </form>
     <div id="error"></div>
@@ -130,6 +148,7 @@
         let roomId = "190724"
         let apiKey = ""
         let resultsArray = [];
+        let selectedFormat = undefined;
 
         let formStartTime = document.getElementById('form-startTime')
         let formEndTime = document.getElementById('form-endTime')
@@ -143,6 +162,8 @@
         let formToday = document.getElementById('form-today')
         let formYesterday = document.getElementById('form-yesterday')
         let formDatePick = document.getElementById('form-date-pick')
+        let formFormatGrouped = document.getElementById('form-format-grouped');
+        let formFormat5min = document.getElementById('form-format-5min');
 
         formStartTime.value = startTime
         formEndTime.value = endTime
@@ -152,12 +173,17 @@
             formDatePick.value = ""
         }
         const selectDatePick = () => {
+            //console.log(formDatePick.value)
             if (formDatePick.value !== "") {
                 startTime = `${formDatePick.value.slice(0, 4)}-${formDatePick.value.slice(5, 7)}-${formDatePick.value.slice(8, 10)}T00:00:01.782Z`
                 endTime = `${formDatePick.value.slice(0, 4)}-${formDatePick.value.slice(5, 7)}-${formDatePick.value.slice(8, 10)}T23:59:29.782Z`
                 formStartTime.value = startTime
                 formEndTime.value = endTime
+                formToday.style.backgroundColor = "wheat"
+                formYesterday.style.backgroundColor = "wheat"
+                formDatePick.style.backgroundColor = "white"
             }
+
         }
         const selectToday = () => {
             startTime = `${currentYear}-${currentMonth}-${currentDay}T00:00:01.782Z`
@@ -165,6 +191,10 @@
             formStartTime.value = startTime
             formEndTime.value = endTime
             formDatePick.value = ""
+            formToday.style.backgroundColor = "white"
+            formYesterday.style.backgroundColor = "wheat"
+            formDatePick.style.backgroundColor = "wheat"
+
         }
         const selectYesterday = () => {
             startTime = `${currentYear}-${currentMonth}-${currentDayMinusOne}T00:00:01.782Z`
@@ -172,6 +202,9 @@
             formStartTime.value = startTime
             formEndTime.value = endTime
             formDatePick.value = ""
+            formToday.style.backgroundColor = "wheat"
+            formYesterday.style.backgroundColor = "white"
+            formDatePick.style.backgroundColor = "wheat"
         }
         const reloadPage = () => {
             button.addEventListener('click', location.reload(true))
@@ -182,7 +215,7 @@
             let timeToCheck = midnight;
             for (i = 0; i < 288; i++) {
                 let currentOccupancy = 0;
-                //display time 
+                //displaytime in human readable form
                 const div2 = document.createElement("div")
                 div2.style.borderBottom = "1px solid wheat"
                 let toCheckMinute = new Date(timeToCheck * 1000).getUTCMinutes();
@@ -190,6 +223,7 @@
                 let toCheckHour = new Date(timeToCheck * 1000).getUTCHours();
                 if (toCheckHour < 10) toCheckHour = "0" + toCheckHour
                 div2.innerHTML = `${toCheckHour}:${toCheckMinute}`
+
                 generalHours.appendChild(div2);
                 //check occupancy
                 resultsArray.forEach(element => {
@@ -209,6 +243,8 @@
         }
         const getOccupancy = (item, index) => {
             console.log(item)
+            //TODO: get UNIX time
+            //get date and time from response:  
             let minute = item.endTime.slice(14, 16)
             let hour = item.endTime.slice(11, 13)
             let day = item.endTime.slice(8, 10)
@@ -220,21 +256,101 @@
             resultsArray.push({
                 "occupancy": occupancy, "startTime": itemStartTime, "endTime": itemEndTime
             })
+
+
+
+            //TODO: check if UNIX time changed more than 5 minutes
+            // display occupancy
+            //const div = document.createElement("div")
+            //div.style.borderBottom = "1px solid wheat"
+            //generalValues.appendChild(div);
+            // display date and time
+            //const div2 = document.createElement("div")
+            //div2.style.borderBottom = "1px solid wheat"
+            //if (Number(hour) > currentTime.getHours() && Number(day) >= currentTime.getDate() && Number(month) >= (currentTime.getMonth() + 1)) {
+            //    div2.innerHTML = `${item.startTime.slice(11, 13)}:${item.startTime.slice(14, 16)} - now`
+            //} else {
+            //    div2.innerHTML = `${item.startTime.slice(11, 13)}:${item.startTime.slice(14, 16)} - ${item.endTime.slice(11, 13)}:${item.endTime.slice(14, 16)}`
+            //}
+            //generalHours.appendChild(div2);
+
         }
-        const showResult = (response) => {
-            errorBox.innerText = ""
+
+        const deleteDuplicatesGrouped = (item, index) => {
+            let hour = item.endTime.slice(11, 13)
+            let day = item.endTime.slice(8, 10)
+            let month = item.endTime.slice(5, 7)
+            let year = item.endTime.slice(0, 4)
+            console.log(item.endTime, 'endtime')
+            console.log(month, 'month')
+            console.log(year, 'year')
+            let check = (hours.findIndex(element => element === hour));
+            //deleting duplicates temporary switched off. uncomment to enable:
+            //if (check === -1) {
             const div = document.createElement("div")
             div.style.borderBottom = "1px solid wheat"
-            div.innerText = "occupancy";
+            div.innerHTML = item.occupancy;
+            console.log(item)
             generalValues.appendChild(div);
             const div2 = document.createElement("div")
             div2.style.borderBottom = "1px solid wheat"
-            div2.innerText = "time";
+            console.log(currentTime.getMonth())
+            console.log(Number(month), 'number month')
+            if (Number(hour) > currentTime.getHours() && Number(day) >= currentTime.getDate() && Number(month) >= (currentTime.getMonth() + 1)) {
+                div2.innerHTML = "currently";
+            } else {
+                div2.innerHTML = `${item.startTime.slice(11, 13)}:${item.startTime.slice(14, 16)} - ${item.endTime.slice(11, 13)}:${item.endTime.slice(14, 16)}`
+            }
+            generalHours.appendChild(div2);
+            hours.push(hour)
+            //} - uncomment to enable deleting duplicates
+        }
+
+        const showResult = (response) => {
+            //lock input fields
+            //formStartTime.setAttribute("disabled", true)
+            //formEndTime.setAttribute("disabled", true)
+            //formroomId.setAttribute("disabled", true)
+            //formApiKey.setAttribute("disabled", true)
+            //display header
+            errorBox.innerText = ""
+            generalHours.innerHTML = ""
+            generalValues.innerHTML = ""
+            const div = document.createElement("div")
+            div.style.borderBottom = "1px solid wheat"
+            div.innerHTML = "occupancy"; // TODO: change inner HTML to inner text
+            generalValues.appendChild(div);
+            const div2 = document.createElement("div")
+            div2.style.borderBottom = "1px solid wheat"
+            div2.innerHTML = "time"; // TODO: change inner HTML to inner text
             generalHours.appendChild(div2);
             let content = response.content
             console.log(typeof content)
             content.forEach(getOccupancy)
             displayOccupancy();
+        }
+
+        const showResultGrouped = (response) => {
+            //lock input fields
+            //formStartTime.setAttribute("disabled", true)
+            //formEndTime.setAttribute("disabled", true)
+            //formroomId.setAttribute("disabled", true)
+            //formApiKey.setAttribute("disabled", true)
+            //display header
+            errorBox.innerText = ""
+            generalHours.innerHTML = ""
+            generalValues.innerHTML = ""
+            const div = document.createElement("div")
+            div.style.borderBottom = "1px solid wheat"
+            div.innerHTML = "occupancy";
+            generalValues.appendChild(div);
+            const div2 = document.createElement("div")
+            div2.style.borderBottom = "1px solid wheat"
+            div2.innerHTML = "time";
+            generalHours.appendChild(div2);
+            let content = response.content
+            //display results
+            content.forEach(deleteDuplicatesGrouped)
         }
 
         const showError = (err) => {
@@ -264,14 +380,73 @@
                 .then(response => response.json())
                 .then(response => showResult(response))
                 .catch(err => showError(err));
+            //reload buton
+            //button.innerText = "Reload"
+            //button.removeEventListener('click', fetchData)
+            //button.addEventListener("click", reloadPage)
+
         }
 
-        button.addEventListener("click", fetchData)
+        const fetchDataGrouped = () => {
+            //load input values to variables
+            startTime = formStartTime.value
+            endTime = formEndTime.value
+            roomId = formroomId.value
+            apiKey = formApiKey.value
+            //send request
+            let urlStartTime = encodeURI(startTime)
+            let urlEndTime = encodeURI(endTime)
+            errorBox.innerText = "Fetching data from api..."
+            const options = {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Api-Key': apiKey
+                }
+            };
+            fetch(`https://apps.cloud.us.kontakt.io/v3/occupancy/rooms/history?size=4444&startTime=${urlStartTime}&endTime=${urlEndTime}&roomId=${roomId}`, options)
+                .then(response => response.json())
+                .then(response => showResultGrouped(response))
+                .catch(err => showError(err));
+            //reload buton
+            //button.innerText = "Reload"
+            //button.removeEventListener('click', fetchDataGrouped)
+            //button.addEventListener("click", reloadPage)
+
+        }
+
+        button.addEventListener("click", () => {
+            if (formApiKey.value.length > 5) {
+                if (selectedFormat === "fetchData") {
+                    fetchData()
+                } else if (selectedFormat === "fetchDataGrouped") {
+                    fetchDataGrouped()
+                } else {
+                    errorBox.innerText = "wrong format selected"
+                    formFormat5min.style.backgroundColor = "red"
+                    formFormatGrouped.style.backgroundColor = "red"
+                }
+                formApiKey.style.backgroundColor = "wheat"
+            } else {
+                errorBox.innerText = "apiKey cannot be empty"
+                formApiKey.style.backgroundColor = "red"
+            }
+        })
         formToday.addEventListener('click', selectToday)
         formYesterday.addEventListener('click', selectYesterday)
         formDatePick.addEventListener('change', selectDatePick)
         formStartTime.addEventListener('change', clearDatePick)
         formEndTime.addEventListener('change', clearDatePick)
+        formFormatGrouped.addEventListener('click', () => {
+            selectedFormat = "fetchDataGrouped"
+            formFormatGrouped.style.backgroundColor = "white"
+            formFormat5min.style.backgroundColor = "wheat"
+        })
+        formFormat5min.addEventListener('click', () => {
+            selectedFormat = "fetchData"
+            formFormatGrouped.style.backgroundColor = "wheat"
+            formFormat5min.style.backgroundColor = "white"
+        })
     </script>
 </body>
 
